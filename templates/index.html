@@ -1,0 +1,3622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务管理系统 - 管理员端</title>
+    <!-- Vue3开发版 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <!-- Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <!-- Font Awesome图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 全局样式：完全匹配参考图的绿色主色调 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', 'Arial', sans-serif;
+        }
+        :root {
+            --primary: #2c7a68; /* 参考图核心绿色 */
+            --primary-light: #35917c;
+            --primary-hover: #236657;
+            --sidebar-bg: #f8f9fa;
+            --sidebar-active: #e8f4f2;
+            --table-header: #2c7a68;
+            --table-row-hover: #f5f9f8;
+            --white: #ffffff;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+            --gray-dark: #343a40;
+            --shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+            --radius: 4px;
+            --transition: all 0.2s ease;
+        }
+
+        /* ========== 登录/注册页样式 ========== */
+        .login-page {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: url('https://picsum.photos/id/1005/1920/1080'); /* 参考图风格插画背景 */
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .login-page::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3); /* 背景暗化 */
+        }
+        .login-box {
+            width: 400px;
+            background: rgba(255, 255, 255, 0.9); /* 半透明毛玻璃 */
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(8px);
+            position: relative;
+            z-index: 10;
+        }
+        .login-box h2 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 30px;
+            font-size: 22px;
+            font-weight: 600;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .form-group label {
+            display: none; /* 参考图无显式label，用图标代替 */
+        }
+        .login-input {
+            width: 100%;
+            padding: 12px 15px 12px 40px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .login-input:focus {
+            border-color: var(--primary);
+        }
+        /* 输入框图标 */
+        .form-group::before {
+            content: "";
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            color: var(--primary);
+            font-size: 18px;
+        }
+        .username-group::before {
+            content: "\f007"; /* 用户图标 */
+        }
+        .password-group::before {
+            content: "\f023"; /* 锁图标 */
+        }
+        .phone-group::before {
+            content: "\f095"; /* 手机图标 */
+        }
+        .code-group::before {
+            content: "\f121"; /* 验证码图标 */
+        }
+        .new-password-group::before {
+            content: "\f084"; /* 新密码图标 */
+        }
+        .confirm-password-group::before {
+            content: "\f086"; /* 确认密码图标 */
+        }
+        /* 验证码输入框样式 */
+        .code-input-group {
+            display: flex;
+            gap: 10px;
+        }
+        .code-input {
+            flex: 1;
+            padding: 12px 15px 12px 40px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            outline: none;
+        }
+        .send-code-btn {
+            width: 120px;
+            background: var(--primary-light);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        .send-code-btn:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+        }
+        /* 登录/注册切换 */
+        .auth-switch {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--gray);
+        }
+        .auth-switch a {
+            color: var(--primary);
+            text-decoration: none;
+            margin-left: 5px;
+        }
+        /* 忘记密码链接 */
+        .forgot-password {
+            text-align: right;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .forgot-password a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        /* 登录方式切换 */
+        .login-type-switch {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .login-type-switch span {
+            cursor: pointer;
+            padding: 5px 10px;
+            border-bottom: 2px solid transparent;
+            color: var(--gray);
+        }
+        .login-type-switch span.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+        /* 角色选择（美化版） */
+        .role-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            color: var(--primary);
+            font-size: 14px;
+            padding: 0 20px;
+        }
+        .role-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .role-group input[type="radio"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+        }
+        /* 记住密码样式 */
+        .remember-password {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: var(--gray-dark);
+        }
+        .remember-password input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+        }
+        /* 登录/注册按钮 */
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .login-btn:hover {
+            background: var(--primary-hover);
+        }
+        .login-btn:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+        }
+        /* 错误提示 */
+        .error-msg {
+            color: #dc3545;
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 8px;
+            background: #f8d7da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        /* 注销按钮样式 */
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .logout-btn:hover {
+            background: #bb2d3b;
+        }
+
+        /* ========== 后台管理界面样式 ========== */
+        /* 左侧侧边栏 */
+        .sidebar {
+            width: 200px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--gray-light);
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+            padding-top: 60px;
+        }
+        .sidebar-menu {
+            list-style: none;
+        }
+        .sidebar-menu li {
+            margin: 4px 0;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: var(--gray-dark);
+            text-decoration: none;
+            border-left: 3px solid transparent;
+            transition: var(--transition);
+        }
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background: var(--sidebar-active);
+            color: var(--primary);
+            border-left-color: var(--primary);
+        }
+        .sidebar-menu i {
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        .sidebar-submenu {
+            padding-left: 20px;
+            list-style: none;
+            display: none;
+        }
+        .sidebar-menu li:hover .sidebar-submenu {
+            display: block;
+        }
+        .sidebar-submenu a {
+            padding: 8px 20px;
+            font-size: 14px;
+        }
+        /* 权限禁用样式 */
+        .menu-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .menu-disabled:hover {
+            background: transparent !important;
+            color: var(--gray-dark) !important;
+            border-left-color: transparent !important;
+        }
+
+        /* 顶部导航栏 */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 200px;
+            right: 0;
+            height: 60px;
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 90;
+            box-shadow: var(--shadow);
+        }
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .header-user span {
+            color: var(--gray-dark);
+        }
+        .header-user a {
+            color: var(--gray-dark);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .header-user a:hover {
+            color: var(--primary);
+        }
+
+        /* 主内容区 */
+        .main-content {
+            margin-left: 200px;
+            margin-top: 60px;
+            padding: 20px;
+            width: calc(100% - 200px);
+            min-height: calc(100vh - 60px);
+            background: #f9fafb;
+        }
+
+        /* 搜索栏 */
+        .search-bar {
+            background: var(--white);
+            padding: 15px 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .search-bar label {
+            color: var(--gray-dark);
+            font-weight: 500;
+        }
+        .search-bar input, .search-bar select {
+            padding: 8px 12px;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--radius);
+            outline: none;
+            transition: var(--transition);
+            font-size: 14px;
+        }
+        .search-bar input:focus, .search-bar select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(44, 122, 104, 0.1);
+        }
+        .search-bar select {
+            min-width: 120px;
+        }
+        .search-btn {
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .search-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(44, 122, 104, 0.2);
+        }
+        .action-buttons {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+        }
+        .btn-add {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .btn-add:hover {
+            background: var(--primary-hover);
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(44, 122, 104, 0.2);
+        }
+        .btn-notice {
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        .btn-notice:hover {
+            background: #bb2d3b;
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
+        }
+        .btn-notice::after {
+            content: "1";
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: white;
+            color: #dc3545;
+            font-size: 12px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .data-table thead {
+            background: var(--table-header);
+            color: var(--white);
+        }
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-light);
+        }
+        .data-table th {
+            font-weight: 500;
+        }
+        .data-table tbody tr:hover {
+            background: var(--table-row-hover);
+        }
+        .data-table img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .table-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .table-btn {
+            padding: 4px 8px;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--radius);
+            background: var(--white);
+            color: var(--gray-dark);
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: var(--transition);
+        }
+        .table-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(44, 122, 104, 0.05);
+        }
+        .table-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 弹窗样式 */
+        .modal-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+        .modal-box {
+            width: 500px;
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 20px;
+            animation: modalFadeIn 0.3s ease;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+        .modal-header h3 {
+            color: var(--primary);
+            font-size: 18px;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--gray);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        .modal-close:hover {
+            background: var(--gray-light);
+            color: var(--gray-dark);
+        }
+        .modal-body .form-group {
+            margin-bottom: 15px;
+        }
+        .modal-body label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--gray-dark);
+            font-weight: 500;
+        }
+        .modal-body input, .modal-body select, .modal-body textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--radius);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .modal-body input:focus, .modal-body select:focus, .modal-body textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(44, 122, 104, 0.1);
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .modal-btn {
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-confirm {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-confirm:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(44, 122, 104, 0.2);
+        }
+        .btn-cancel {
+            background: var(--gray-light);
+            color: var(--gray-dark);
+        }
+        .btn-cancel:hover {
+            background: var(--gray);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* 空数据状态 - 优化版 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray);
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-top: 20px;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+            color: var(--primary-light);
+        }
+        .empty-state p {
+            font-size: 1.1rem;
+            margin-bottom: 24px;
+            color: var(--gray-dark);
+        }
+
+        /* 统计卡片样式 */
+        .stat-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--white);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--white);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .stat-icon.total {
+            background: var(--primary);
+        }
+        .stat-icon.pending {
+            background: #f59e0b;
+        }
+        .stat-icon.completed {
+            background: #16a34a;
+        }
+        .stat-icon.overdue {
+            background: #dc2626;
+        }
+        .stat-info h4 {
+            font-size: 14px;
+            color: var(--gray);
+            margin-bottom: 5px;
+        }
+        .stat-info p {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--gray-dark);
+        }
+
+        /* 数据统计页面样式 - 优化版 */
+        .stats-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        .chart-card {
+            background: var(--white);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+        .chart-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+        /* 修改图表容器样式 */
+        .chart-container {
+            width: 100%;
+            height: 80%;
+            border-radius: var(--radius);
+        }
+        .chart-placeholder {
+            width: 100%;
+            height: 80%;
+            background: var(--gray-light);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray);
+            font-size: 18px;
+        }
+        .report-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .report-btn {
+            background: var(--primary-light);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+        .report-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(44, 122, 104, 0.2);
+        }
+
+        /* ========== 优化的报表导出样式 ========== */
+        .export-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .export-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 30px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .export-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        .export-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+        .export-card:hover::before {
+            opacity: 1;
+        }
+        .export-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 32px;
+            color: white;
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            box-shadow: 0 4px 12px rgba(44, 122, 104, 0.2);
+        }
+        .export-excel .export-icon {
+            background: linear-gradient(135deg, #21b573, #10ac84);
+        }
+        .export-pdf .export-icon {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        .export-word .export-icon {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+        .export-card h3 {
+            color: var(--gray-dark);
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .export-card p {
+            color: var(--gray);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .export-card-btn {
+            margin-top: 15px;
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+        .export-card:hover .export-card-btn {
+            background: var(--primary);
+            color: white;
+        }
+        .export-excel .export-card-btn {
+            border-color: #21b573;
+            color: #21b573;
+        }
+        .export-excel:hover .export-card-btn {
+            background: #21b573;
+        }
+        .export-pdf .export-card-btn {
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+        .export-pdf:hover .export-card-btn {
+            background: #e74c3c;
+        }
+        .export-word .export-card-btn {
+            border-color: #3498db;
+            color: #3498db;
+        }
+        .export-word:hover .export-card-btn {
+            background: #3498db;
+        }
+
+        /* 通知公告样式 */
+        .notice-list {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .notice-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--gray-light);
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            transition: all 0.2s ease;
+        }
+        .notice-item:hover {
+            background: var(--table-row-hover);
+        }
+        .notice-item:last-child {
+            border-bottom: none;
+        }
+        .notice-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(44, 122, 104, 0.2);
+        }
+        .notice-content {
+            flex: 1;
+        }
+        .notice-title {
+            font-weight: 600;
+            color: var(--gray-dark);
+            margin-bottom: 5px;
+        }
+        .notice-time {
+            font-size: 12px;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+
+        /* 系统设置样式 */
+        .settings-form {
+            background: var(--white);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        .settings-group {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+        .settings-group:last-child {
+            border-bottom: none;
+        }
+        .settings-group h4 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .settings-group h4 i {
+            font-size: 18px;
+        }
+        .settings-row {
+            display: flex;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        .settings-label {
+            width: 150px;
+            color: var(--gray-dark);
+            font-weight: 500;
+        }
+        .settings-control {
+            flex: 1;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--gray-light);
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        /* 角色权限样式 */
+        .permission-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .permission-table th, .permission-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-light);
+        }
+        .permission-table th {
+            background: var(--table-header);
+            color: white;
+        }
+
+        /* 个人中心样式 */
+        .profile-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+        .profile-card {
+            background: var(--white);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .profile-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            object-fit: cover;
+            border: 4px solid var(--primary-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(44, 122, 104, 0.2);
+        }
+        .profile-avatar:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
+        }
+        .profile-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--gray-dark);
+            margin-bottom: 5px;
+        }
+        .profile-role {
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-size: 14px;
+            padding: 4px 12px;
+            background: rgba(44, 122, 104, 0.1);
+            border-radius: 12px;
+            display: inline-block;
+        }
+        .profile-info {
+            text-align: left;
+            margin-top: 20px;
+        }
+        .profile-info-item {
+            display: flex;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+        .profile-info-label {
+            width: 80px;
+            color: var(--gray);
+        }
+        /* 头像上传样式 */
+        .avatar-upload {
+            position: relative;
+            display: inline-block;
+        }
+        .avatar-upload-input {
+            display: none;
+        }
+        .avatar-upload-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: var(--primary-light);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .avatar-upload-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(44, 122, 104, 0.2);
+        }
+        .avatar-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--primary-light);
+            margin: 0 auto;
+            display: block;
+            box-shadow: 0 4px 12px rgba(44, 122, 104, 0.2);
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px;
+            }
+            .sidebar-menu span {
+                display: none;
+            }
+            .sidebar-menu i {
+                margin-right: 0;
+            }
+            .header {
+                left: 60px;
+            }
+            .main-content {
+                margin-left: 60px;
+                width: calc(100% - 60px);
+            }
+            .search-bar {
+                flex-wrap: wrap;
+            }
+            .modal-box {
+                width: 90%;
+            }
+            .stat-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+            .profile-container {
+                grid-template-columns: 1fr;
+            }
+            .export-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    padding: 15px;
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+.page-btn {
+    padding: 6px 12px;
+    border: 1px solid var(--gray-light);
+    background: var(--white);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.page-btn:hover:not(:disabled) {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.page-info {
+    color: var(--gray-dark);
+}
+.page-size {
+    padding: 6px 10px;
+    border: 1px solid var(--gray-light);
+    border-radius: var(--radius);
+    background: var(--white);
+    cursor: pointer;
+}
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- ========== 登录/注册/找回密码页面 ========== -->
+        <div v-if="!token" class="login-page">
+            <div class="login-box">
+                <!-- 登录表单 -->
+                <h2 v-if="!isRegister && !isForgotPassword">任务管理系统登录</h2>
+                <!-- 注册表单 -->
+                <h2 v-if="isRegister">管理员注册</h2>
+                <!-- 找回密码表单 -->
+                <h2 v-if="isForgotPassword">
+                    <span v-if="forgotStep === 1">找回密码 - 验证手机号</span>
+                    <span v-if="forgotStep === 2">找回密码 - 重置密码</span>
+                </h2>
+
+                <!-- 错误提示 -->
+                <div class="error-msg" v-if="errorMsg">
+                    <i class="fas fa-exclamation-circle"></i> [[ errorMsg ]]
+                </div>
+
+                <!-- 登录表单 -->
+                <div v-if="!isRegister && !isForgotPassword">
+                    <!-- 登录方式切换 -->
+                    <div class="login-type-switch">
+                        <span :class="{active: loginType === 'account'}" @click="switchLoginType('account')">账号密码登录</span>
+                        <span :class="{active: loginType === 'phone'}" @click="switchLoginType('phone')">手机号验证码登录</span>
+                    </div>
+
+                    <!-- 账号密码登录 -->
+                    <div v-if="loginType === 'account'">
+                        <div class="form-group username-group">
+                            <label for="username">用户名</label>
+                            <input
+                                id="username"
+                                v-model="loginForm.username"
+                                class="login-input"
+                                placeholder="请输入用户名"
+                                required
+                            />
+                        </div>
+
+                        <div class="form-group password-group">
+                            <label for="password">密码</label>
+                            <input
+                                id="password"
+                                v-model="loginForm.password"
+                                type="password"
+                                class="login-input"
+                                placeholder="请输入密码"
+                                required
+                            />
+                        </div>
+
+                        <!-- 角色选择（美化版） -->
+                        <div class="role-group">
+                            <div class="role-option">
+                                <input type="radio" id="admin" name="role" v-model="loginForm.role" value="admin">
+                                <label for="admin">管理员</label>
+                            </div>
+                            <div class="role-option">
+                                <input type="radio" id="user" name="role" v-model="loginForm.role" value="user">
+                                <label for="user">普通员工</label>
+                            </div>
+                        </div>
+
+                        <!-- 记住密码 -->
+                        <div class="remember-password">
+                            <input type="checkbox" id="remember" v-model="loginForm.remember">
+                            <label for="remember">记住密码</label>
+                        </div>
+
+                        <!-- 忘记密码链接 -->
+                        <div class="forgot-password">
+                            <a href="#" @click.prevent="switchToForgotPassword">忘记密码？</a>
+                        </div>
+
+                        <button @click="handleLogin" class="login-btn" :disabled="loading">
+                            <span v-if="!loading">登录</span>
+                            <span v-else><i class="fas fa-spinner fa-spin"></i> 登录中...</span>
+                        </button>
+                    </div>
+
+                    <!-- 手机号验证码登录 -->
+                    <div v-if="loginType === 'phone'">
+                        <div class="form-group phone-group">
+                            <label for="login-phone">手机号码</label>
+                            <input
+                                id="login-phone"
+                                v-model="phoneLoginForm.phone"
+                                class="login-input"
+                                placeholder="请输入手机号码"
+                                required
+                            />
+                        </div>
+
+                        <div class="form-group code-group">
+                            <div class="code-input-group">
+                                <input
+                                    id="login-code"
+                                    v-model="phoneLoginForm.code"
+                                    class="code-input"
+                                    placeholder="请输入验证码"
+                                    required
+                                />
+                                <button
+                                    class="send-code-btn"
+                                    @click="sendLoginCode"
+                                    :disabled="loginCodeDisabled || !phoneLoginForm.phone"
+                                >
+                                    [[ loginCodeText ]]
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 记住密码 -->
+                        <div class="remember-password">
+                            <input type="checkbox" id="remember-phone" v-model="phoneLoginForm.remember">
+                            <label for="remember-phone">记住密码</label>
+                        </div>
+
+                        <!-- 忘记密码链接 -->
+                        <div class="forgot-password">
+                            <a href="#" @click.prevent="switchToForgotPassword">忘记密码？</a>
+                        </div>
+
+                        <button @click="handlePhoneLogin" class="login-btn" :disabled="loading">
+                            <span v-if="!loading">登录</span>
+                            <span v-else><i class="fas fa-spinner fa-spin"></i> 登录中...</span>
+                        </button>
+                    </div>
+
+                    <!-- 注册切换 -->
+                    <div class="auth-switch">
+                        还没有账号？<a href="#" @click.prevent="switchToRegister">立即注册</a>
+                    </div>
+                </div>
+
+                <!-- 注册表单 -->
+                <div v-if="isRegister && !isForgotPassword">
+                    <div class="form-group username-group">
+                        <label for="reg-username">用户名</label>
+                        <input
+                            id="reg-username"
+                            v-model="registerForm.username"
+                            class="login-input"
+                            placeholder="请设置用户名"
+                            required
+                        />
+                    </div>
+
+                    <div class="form-group password-group">
+                        <label for="reg-password">密码</label>
+                        <input
+                            id="reg-password"
+                            v-model="registerForm.password"
+                            type="password"
+                            class="login-input"
+                            placeholder="请设置密码"
+                            required
+                        />
+                    </div>
+
+                    <div class="form-group phone-group">
+                        <label for="reg-phone">手机号码</label>
+                        <input
+                            id="reg-phone"
+                            v-model="registerForm.phone"
+                            class="login-input"
+                            placeholder="请输入手机号码"
+                            required
+                        />
+                    </div>
+
+                    <div class="form-group code-group">
+                        <div class="code-input-group">
+                            <input
+                                id="reg-code"
+                                v-model="registerForm.code"
+                                class="code-input"
+                                placeholder="请输入验证码"
+                                required
+                            />
+                            <button
+                                class="send-code-btn"
+                                @click="sendRegisterCode"
+                                :disabled="codeDisabled || !registerForm.phone"
+                            >
+                                [[ codeText ]]
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 角色选择 -->
+                    <div class="role-group">
+                        <div class="role-option">
+                            <input type="radio" id="reg-admin" name="reg-role" v-model="registerForm.role" value="admin">
+                            <label for="reg-admin">管理员</label>
+                        </div>
+                        <div class="role-option">
+                            <input type="radio" id="reg-user" name="reg-role" v-model="registerForm.role" value="user" checked>
+                            <label for="reg-user">普通员工</label>
+                        </div>
+                    </div>
+
+                    <button @click="handleRegister" class="login-btn" :disabled="loading">
+                        <span v-if="!loading">注册</span>
+                        <span v-else><i class="fas fa-spinner fa-spin"></i> 注册中...</span>
+                    </button>
+
+                    <!-- 登录切换 -->
+                    <div class="auth-switch">
+                        已有账号？<a href="#" @click.prevent="switchToLogin">立即登录</a>
+                    </div>
+                </div>
+
+                <!-- 找回密码表单 -->
+                <div v-if="isForgotPassword">
+                    <!-- 第一步：验证手机号 -->
+                    <div v-if="forgotStep === 1">
+                        <div class="form-group phone-group">
+                            <label for="forgot-phone">手机号码</label>
+                            <input
+                                id="forgot-phone"
+                                v-model="forgotForm.phone"
+                                class="login-input"
+                                placeholder="请输入注册的手机号码"
+                                required
+                            />
+                        </div>
+
+                        <div class="form-group code-group">
+                            <div class="code-input-group">
+                                <input
+                                    id="forgot-code"
+                                    v-model="forgotForm.code"
+                                    class="code-input"
+                                    placeholder="请输入验证码"
+                                    required
+                                />
+                                <button
+                                    class="send-code-btn"
+                                    @click="sendForgotCode"
+                                    :disabled="forgotCodeDisabled || !forgotForm.phone"
+                                >
+                                    [[ forgotCodeText ]]
+                                </button>
+                            </div>
+                        </div>
+
+                        <button @click="verifyForgotPhone" class="login-btn" :disabled="loading">
+                            <span v-if="!loading">验证并下一步</span>
+                            <span v-else><i class="fas fa-spinner fa-spin"></i> 验证中...</span>
+                        </button>
+
+                        <!-- 返回登录 -->
+                        <div class="auth-switch" style="margin-top: 15px;">
+                            <a href="#" @click.prevent="switchToLogin">返回登录</a>
+                        </div>
+                    </div>
+
+                    <!-- 第二步：重置密码 -->
+                    <div v-if="forgotStep === 2">
+                        <div class="form-group new-password-group">
+                            <label for="new-password">新密码</label>
+                            <input
+                                id="new-password"
+                                v-model="forgotForm.newPassword"
+                                type="password"
+                                class="login-input"
+                                placeholder="请输入新密码"
+                                required
+                            />
+                        </div>
+
+                        <div class="form-group confirm-password-group">
+                            <label for="confirm-password">确认新密码</label>
+                            <input
+                                id="confirm-password"
+                                v-model="forgotForm.confirmPassword"
+                                type="password"
+                                class="login-input"
+                                placeholder="请确认新密码"
+                                required
+                            />
+                        </div>
+
+                        <button @click="resetPassword" class="login-btn" :disabled="loading">
+                            <span v-if="!loading">重置密码</span>
+                            <span v-else><i class="fas fa-spinner fa-spin"></i> 重置中...</span>
+                        </button>
+
+                        <!-- 返回登录 -->
+                        <div class="auth-switch" style="margin-top: 15px;">
+                            <a href="#" @click.prevent="switchToLogin">返回登录</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 后台管理界面 ========== -->
+        <div v-else>
+            <!-- 左侧侧边栏 -->
+            <div class="sidebar">
+                <ul class="sidebar-menu">
+                    <li><a href="#" :class="{active: currentMenu === 'home'}" @click="changeMenu('home')"><i class="fas fa-home"></i> <span>首页</span></a></li>
+                    <li><a href="#" :class="{active: currentMenu === 'profile'}" @click="changeMenu('profile')"><i class="fas fa-user"></i> <span>个人中心</span></a></li>
+                    <li>
+                        <a href="#" :class="{active: currentMenu === 'user' || currentMenu === 'role'}" @click="changeMenu('user')" :class="{ 'menu-disabled': !hasPermission('user_manage') }"><i class="fas fa-users"></i> <span>用户管理</span></a>
+                        <ul class="sidebar-submenu">
+                            <li><a href="#" :class="{active: currentMenu === 'user'}" @click="changeMenu('user')" :class="{ 'menu-disabled': !hasPermission('user_manage') }"><i class="fas fa-user-circle"></i> <span>用户列表</span></a></li>
+                            <li><a href="#" :class="{active: currentMenu === 'role'}" @click="changeMenu('role')" :class="{ 'menu-disabled': !hasPermission('role_manage') }"><i class="fas fa-user-shield"></i> <span>角色权限</span></a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#" :class="{active: ['task','task-pending','task-completed','task-overdue'].includes(currentMenu)}" @click="changeMenu('task')"><i class="fas fa-tasks"></i> <span>任务管理</span></a>
+                        <ul class="sidebar-submenu">
+                            <li><a href="#" :class="{active: currentMenu === 'task'}" @click="changeMenu('task')"><i class="fas fa-list"></i> <span>任务列表</span></a></li>
+                            <li><a href="#" :class="{active: currentMenu === 'task-pending'}" @click="changeMenu('task-pending')"><i class="fas fa-clock"></i> <span>待办任务</span></a></li>
+                            <li><a href="#" :class="{active: currentMenu === 'task-completed'}" @click="changeMenu('task-completed')"><i class="fas fa-check-circle"></i> <span>已完成任务</span></a></li>
+                            <li><a href="#" :class="{active: currentMenu === 'task-overdue'}" @click="changeMenu('task-overdue')"><i class="fas fa-exclamation-circle"></i> <span>逾期任务</span></a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#" :class="{active: currentMenu === 'stats' || currentMenu === 'report'}" @click="changeMenu('stats')" :class="{ 'menu-disabled': !hasPermission('stats_view') }"><i class="fas fa-chart-pie"></i> <span>数据统计</span></a>
+                        <ul class="sidebar-submenu">
+                            <li><a href="#" :class="{active: currentMenu === 'stats'}" @click="changeMenu('stats')" :class="{ 'menu-disabled': !hasPermission('stats_view') }"><i class="fas fa-chart-bar"></i> <span>任务统计</span></a></li>
+                            <li><a href="#" :class="{active: currentMenu === 'report'}" @click="changeMenu('report')" :class="{ 'menu-disabled': !hasPermission('report_export') }"><i class="fas fa-file-alt"></i> <span>报表导出</span></a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#" :class="{active: currentMenu === 'notice'}" @click="changeMenu('notice')"><i class="fas fa-bell"></i> <span>通知公告</span></a></li>
+                    <li><a href="#" :class="{active: currentMenu === 'system'}" @click="changeMenu('system')" :class="{ 'menu-disabled': !hasPermission('system_setting') }"><i class="fas fa-cog"></i> <span>系统设置</span></a></li>
+                </ul>
+            </div>
+
+            <!-- 顶部导航栏 -->
+            <div class="header">
+                <div class="header-title">任务管理系统</div>
+                <div class="header-user">
+                    <span>[[ currentUser.role === 'admin' ? '超级管理员' : '普通员工' ]] [[ currentUser.username ]]</span>
+                    <a href="#" @click.prevent="goToFront">退出到前台</a>
+                    <a href="#" @click.prevent="handleLogout">退出登录</a>
+                    <!-- 注销账号按钮 -->
+                    <button class="logout-btn" @click="handleAccountCancel">注销账号</button>
+                </div>
+            </div>
+
+            <!-- 主内容区 -->
+            <div class="main-content">
+                <!-- 首页 -->
+                <div v-if="currentMenu === 'home'">
+                    <div class="stat-cards">
+                        <div class="stat-card">
+                            <div class="stat-icon total">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4>总任务数</h4>
+                                <p>[[ taskStats.total ]]</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon pending">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4>待办任务</h4>
+                                <p>[[ taskStats.pending ]]</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon completed">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4>已完成任务</h4>
+                                <p>[[ taskStats.completed ]]</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon overdue">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4>逾期任务</h4>
+                                <p>[[ taskStats.overdue ]]</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="empty-state">
+                        <i class="fas fa-tasks"></i>
+                        <p>欢迎使用任务管理系统</p>
+                        <button class="modal-btn btn-confirm" @click="changeMenu('task')">
+                            <i class="fas fa-list"></i> 查看全部任务
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 个人中心 -->
+                <div v-if="currentMenu === 'profile'">
+                    <div class="profile-container">
+                        <div class="profile-card">
+                            <!-- 头像上传区域 -->
+                            <div class="avatar-upload">
+                                <img :src="avatarPreview || currentUser.avatar || 'https://picsum.photos/id/64/200/200'" alt="头像" class="profile-avatar" @click="triggerAvatarUpload">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    class="avatar-upload-input"
+                                    ref="avatarInput"
+                                    @change="handleAvatarUpload"
+                                >
+                                <button class="avatar-upload-btn" @click="triggerAvatarUpload">
+                                    <i class="fas fa-upload"></i> 更换头像
+                                </button>
+                            </div>
+
+                            <div class="profile-name">[[ currentUser.username ]]</div>
+                            <div class="profile-role">[[ currentUser.role === 'admin' ? '超级管理员' : '普通员工' ]]</div>
+
+                            <div class="profile-info">
+                                <div class="profile-info-item">
+                                    <div class="profile-info-label">用户名：</div>
+                                    <div>[[ currentUser.username ]]</div>
+                                </div>
+                                <div class="profile-info-item">
+                                    <div class="profile-info-label">手机号：</div>
+                                    <div>[[ currentUser.phone || '未绑定' ]]</div>
+                                </div>
+                                <div class="profile-info-item">
+                                    <div class="profile-info-label">角色：</div>
+                                    <div>[[ currentUser.role === 'admin' ? '超级管理员' : '普通员工' ]]</div>
+                                </div>
+                                <div class="profile-info-item">
+                                    <div class="profile-info-label">登录时间：</div>
+                                    <div>[[ formatDate(new Date()) ]]</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profile-form settings-form">
+                            <div class="modal-header">
+                                <h3><i class="fas fa-user-edit"></i> 修改个人信息</h3>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label>用户名</label>
+                                    <input v-model="profileForm.username" placeholder="请输入用户名">
+                                </div>
+                                <div class="form-group">
+                                    <label>手机号码</label>
+                                    <input v-model="profileForm.phone" placeholder="请输入手机号码">
+                                </div>
+                                <div class="form-group">
+                                    <label>原密码</label>
+                                    <input type="password" v-model="profileForm.oldPassword" placeholder="请输入原密码">
+                                </div>
+                                <div class="form-group">
+                                    <label>新密码</label>
+                                    <input type="password" v-model="profileForm.newPassword" placeholder="请输入新密码">
+                                </div>
+                                <div class="form-group">
+                                    <label>确认新密码</label>
+                                    <input type="password" v-model="profileForm.confirmPassword" placeholder="请确认新密码">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="modal-btn btn-confirm" @click="saveProfile"><i class="fas fa-save"></i> 保存修改</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 用户管理 -->
+                <div v-if="currentMenu === 'user'">
+                    <!-- 权限验证 -->
+                    <div v-if="!hasPermission('user_manage')" class="empty-state">
+                        <i class="fas fa-lock"></i>
+                        <p>您没有访问该页面的权限，请联系管理员</p>
+                    </div>
+
+                    <div v-else>
+                        <!-- 搜索栏 -->
+                        <div class="search-bar">
+                            <label>姓名：</label>
+                            <input v-model="searchUser" placeholder="请输入姓名" />
+                            <button class="search-btn" @click="searchUserList"><i class="fas fa-search"></i> 查询</button>
+
+                            <div class="action-buttons">
+                                <button class="btn-add" @click="openUserModal('add')"><i class="fas fa-plus"></i></button>
+                                <button class="btn-notice"><i class="fas fa-bell"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- 用户表格 -->
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>索引</th>
+                                    <th>账号</th>
+                                    <th>姓名</th>
+                                    <th>性别</th>
+                                    <th>手机</th>
+                                    <th>邮箱</th>
+                                    <th>身份证</th>
+                                    <th>角色</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(user, index) in filteredUsers" :key="user.id">
+                                    <td>[[ index + 1 ]]</td>
+                                    <td>[[ user.account ]]</td>
+                                    <td>[[ user.name ]]</td>
+                                    <td>[[ user.gender ]]</td>
+                                    <td>[[ user.phone ]]</td>
+                                    <td>[[ user.email ]]</td>
+                                    <td>[[ user.idCard ]]</td>
+                                    <td :style="{ color: user.role === 'admin' ? '#2c7a68' : '#f59e0b' }">
+                                        <i class="fas fa-user-shield" v-if="user.role === 'admin'"></i> 管理员
+                                        <i class="fas fa-user" v-if="user.role === 'user'"></i> 普通员工
+                                    </td>
+                                    <td :style="{ color: user.status === 'active' ? '#16a34a' : '#dc2626' }">
+                                        <i class="fas fa-check" v-if="user.status === 'active'"></i> 启用
+                                        <i class="fas fa-times" v-if="user.status === 'inactive'"></i> 禁用
+                                        <i class="fas fa-ban" v-if="user.status === 'cancelled'"></i> 已注销
+                                    </td>
+                                    <td class="table-actions">
+                                        <button class="table-btn" @click="openUserModal('detail', user)"><i class="fas fa-eye"></i> 详情</button>
+                                        <button class="table-btn" @click="openUserModal('edit', user)" :disabled="user.status === 'cancelled'"><i class="fas fa-edit"></i> 修改</button>
+                                        <button class="table-btn" @click="openPermissionModal(user)" :disabled="user.status === 'cancelled'"><i class="fas fa-key"></i> 权限</button>
+                                        <button class="table-btn" @click="deleteUser(user.id)" :disabled="user.role === 'admin' && currentUser.role !== 'super_admin' || user.status === 'cancelled'"><i class="fas fa-trash"></i> 删除</button>
+                                    </td>
+                                </tr>
+                                <tr v-if="filteredUsers.length === 0">
+                                    <td colspan="10" style="text-align: center; color: var(--gray); padding: 30px;">
+                                        <i class="fas fa-inbox"></i> 暂无用户数据
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- 在用户表格后面添加 -->
+                        <div class="pagination" v-if="totalUsers > pageSize">
+                            <button class="page-btn" @click="currentPage = 1" :disabled="currentPage === 1">首页</button>
+                            <button class="page-btn" @click="currentPage--" :disabled="currentPage === 1">上一页</button>
+                            <span class="page-info">第 [[ currentPage ]] 页 / 共 [[ totalPages ]] 页</span>
+                            <button class="page-btn" @click="currentPage++" :disabled="currentPage === totalPages">下一页</button>
+                            <button class="page-btn" @click="currentPage = totalPages" :disabled="currentPage === totalPages">末页</button>
+                            <select v-model="pageSize" @change="currentPage = 1" class="page-size">
+                                <option value="5">5条/页</option>
+                                <option value="10">10条/页</option>
+                                <option value="20">20条/页</option>
+                                <option value="50">50条/页</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 角色权限 -->
+                <div v-if="currentMenu === 'role'">
+                    <!-- 权限验证 -->
+                    <div v-if="!hasPermission('role_manage')" class="empty-state">
+                        <i class="fas fa-lock"></i>
+                        <p>您没有访问该页面的权限，请联系管理员</p>
+                    </div>
+
+                    <div v-else>
+                        <div class="search-bar">
+                            <label>角色名称：</label>
+                            <input v-model="searchRole" placeholder="请输入角色名称" />
+                            <button class="search-btn" @click="searchRoleList"><i class="fas fa-search"></i> 查询</button>
+
+                            <div class="action-buttons">
+                                <button class="btn-add" @click="openRoleModal('add')"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- 权限表格 -->
+                        <table class="permission-table">
+                            <thead>
+                                <tr>
+                                    <th>角色名称</th>
+                                    <th>用户管理</th>
+                                    <th>角色管理</th>
+                                    <th>任务管理</th>
+                                    <th>数据统计</th>
+                                    <th>报表导出</th>
+                                    <th>系统设置</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="role in filteredRoles" :key="role.id">
+                                    <td>[[ role.name ]]</td>
+                                    <td>
+                                        <label class="switch">
+                                            <input type="checkbox" v-model="role.permissions.user_manage" @change="updateRolePermission(role)">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="switch">
+                                            <input type="checkbox" v-model="role.permissions.role_manage" @change="updateRolePermission(role)">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="switch">
+                                            <input type="checkbox" v-model="role.permissions.task_manage" @change="updateRolePermission(role)">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="switch">
+                                            <input type="checkbox" v-model="role.permissions.stats_view" @change="updateRolePermission(role)">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="switch">
+                                            <input type="checkbox" v-model="role.permissions.report_export" @change="updateRolePermission(role)">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="switch">
+                                            <input type="checkbox" v-model="role.permissions.system_setting" @change="updateRolePermission(role)">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </td>
+                                    <td class="table-actions">
+                                        <button class="table-btn" @click="openRoleModal('edit', role)"><i class="fas fa-edit"></i> 编辑</button>
+                                        <button class="table-btn" @click="deleteRole(role.id)" :disabled="role.name === '超级管理员'"><i class="fas fa-trash"></i> 删除</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 任务管理 -->
+                <div v-if="['task', 'task-pending', 'task-completed', 'task-overdue'].includes(currentMenu)">
+                    <!-- 搜索栏 -->
+                    <div class="search-bar">
+                        <label>任务名称：</label>
+                        <input v-model="searchTask" placeholder="请输入任务名称" />
+                        <button class="search-btn" @click="searchTaskList"><i class="fas fa-search"></i> 查询</button>
+
+                        <div class="action-buttons">
+                            <button class="btn-add" @click="openTaskModal('add')"><i class="fas fa-plus"></i></button>
+                            <button class="btn-notice"><i class="fas fa-bell"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- 任务表格 -->
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>索引</th>
+                                <th>任务编号</th>
+                                <th>任务名称</th>
+                                <th>负责人</th>
+                                <th>创建时间</th>
+                                <th>截止时间</th>
+                                <th>任务状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(task, index) in filteredTasksByStatus" :key="task.id">
+                                <td>[[ index + 1 ]]</td>
+                                <td>TSK[[ task.id.toString().padStart(6, '0') ]]</td>
+                                <td>[[ task.title ]]</td>
+                                <td>[[ task.manager ]]</td>
+                                <td>[[ formatDate(task.createTime) ]]</td>
+                                <td>[[ formatDate(task.deadline) ]]</td>
+                                <td :style="{ color: task.status === 'completed' ? '#16a34a' : task.status === 'pending' ? '#f59e0b' : '#dc2626' }">
+                                    <i class="fas fa-check-circle" v-if="task.status === 'completed'"></i> 已完成
+                                    <i class="fas fa-clock" v-if="task.status === 'pending'"></i> 待完成
+                                    <i class="fas fa-times-circle" v-if="task.status === 'overdue'"></i> 已逾期
+                                </td>
+                                <td class="table-actions">
+                                    <button class="table-btn" @click="openTaskModal('detail', task)"><i class="fas fa-eye"></i> 详情</button>
+                                    <button class="table-btn" @click="openTaskModal('edit', task)"><i class="fas fa-edit"></i> 修改</button>
+                                    <button class="table-btn" @click="deleteTask(task.id)"><i class="fas fa-trash"></i> 删除</button>
+                                </td>
+                            </tr>
+                            <tr v-if="filteredTasksByStatus.length === 0">
+                                <td colspan="8" style="text-align: center; color: var(--gray); padding: 30px;">
+                                    <i class="fas fa-inbox"></i> 暂无任务数据
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 数据统计 - 替换为真实图表 -->
+                <div v-if="currentMenu === 'stats'">
+                    <!-- 权限验证 -->
+                    <div v-if="!hasPermission('stats_view')" class="empty-state">
+                        <i class="fas fa-lock"></i>
+                        <p>您没有访问该页面的权限，请联系管理员</p>
+                    </div>
+
+                    <div v-else>
+                        <!-- 顶部数据卡片 -->
+                        <div class="stat-cards">
+                            <div class="stat-card">
+                                <div class="stat-icon total">
+                                    <i class="fas fa-tasks"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h4>总任务数</h4>
+                                    <p>[[ taskStats.total ]]</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon pending">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h4>待办任务</h4>
+                                    <p>[[ taskStats.pending ]]</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon completed">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h4>已完成任务</h4>
+                                    <p>[[ taskStats.completed ]]</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon overdue">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h4>逾期任务</h4>
+                                    <p>[[ taskStats.overdue ]]</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stats-container">
+                            <div class="chart-card">
+                                <h3 style="margin-bottom: 20px; color: var(--primary);"><i class="fas fa-chart-pie"></i> 任务状态分布</h3>
+                                <!-- 替换为真实的饼图容器 -->
+                                <div id="pieChart" class="chart-container"></div>
+                                <div style="margin-top: 20px; width: 100%;">
+                                    <div style="display: flex; justify-content: space-around;">
+                                        <div><span style="color: #f59e0b;">●</span> 待完成：[[ taskStats.pending ]]</div>
+                                        <div><span style="color: #16a34a;">●</span> 已完成：[[ taskStats.completed ]]</div>
+                                        <div><span style="color: #dc2626;">●</span> 已逾期：[[ taskStats.overdue ]]</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-card">
+                                <h3 style="margin-bottom: 20px; color: var(--primary);"><i class="fas fa-chart-line"></i> 月度任务完成趋势</h3>
+                                <!-- 替换为真实的折线图容器 -->
+                                <div id="lineChart" class="chart-container"></div>
+                                <div class="report-buttons">
+                                    <button class="report-btn" @click="exportChart('pie')"><i class="fas fa-download"></i> 导出饼图</button>
+                                    <button class="report-btn" @click="exportChart('line')"><i class="fas fa-download"></i> 导出折线图</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 报表导出 - 优化版 -->
+                <div v-if="currentMenu === 'report'">
+                    <!-- 权限验证 -->
+                    <div v-if="!hasPermission('report_export')" class="empty-state">
+                        <i class="fas fa-lock"></i>
+                        <p>您没有访问该页面的权限，请联系管理员</p>
+                    </div>
+
+                    <div v-else>
+                        <div class="search-bar">
+                            <label>导出类型：</label>
+                            <select v-model="reportForm.type">
+                                <option value="all">全部任务</option>
+                                <option value="pending">待办任务</option>
+                                <option value="completed">已完成任务</option>
+                                <option value="overdue">逾期任务</option>
+                            </select>
+                            <label>时间范围：</label>
+                            <input type="date" v-model="reportForm.startDate">
+                            <label>至</label>
+                            <input type="date" v-model="reportForm.endDate">
+                            <button class="search-btn" @click="exportReport"><i class="fas fa-file-export"></i> 导出报表</button>
+                        </div>
+
+                        <!-- 优化的导出选项卡片 -->
+                        <div class="empty-state">
+                            <i class="fas fa-file-export" style="font-size: 3rem;"></i>
+                            <p>选择导出条件并点击下方按钮导出报表</p>
+
+                            <div class="export-container">
+                                <!-- Excel导出卡片 -->
+                                <div class="export-card export-excel" @click="exportReport('excel')">
+                                    <div class="export-icon">
+                                        <i class="fas fa-file-excel"></i>
+                                    </div>
+                                    <h3>导出Excel</h3>
+                                    <p>导出为Excel格式，支持数据筛选、排序和公式计算</p>
+                                    <button class="export-card-btn">立即导出</button>
+                                </div>
+
+                                <!-- PDF导出卡片 -->
+                                <div class="export-card export-pdf" @click="exportReport('pdf')">
+                                    <div class="export-icon">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </div>
+                                    <h3>导出PDF</h3>
+                                    <p>导出为PDF格式，适合打印和存档，格式固定不变</p>
+                                    <button class="export-card-btn">立即导出</button>
+                                </div>
+
+                                <!-- Word导出卡片 -->
+                                <div class="export-card export-word" @click="exportReport('word')">
+                                    <div class="export-icon">
+                                        <i class="fas fa-file-word"></i>
+                                    </div>
+                                    <h3>导出Word</h3>
+                                    <p>导出为Word格式，支持文档编辑和格式调整</p>
+                                    <button class="export-card-btn">立即导出</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 通知公告 -->
+                <div v-if="currentMenu === 'notice'">
+                    <div class="search-bar">
+                        <label>公告标题：</label>
+                        <input v-model="searchNotice" placeholder="请输入公告标题" />
+                        <button class="search-btn" @click="searchNoticeList"><i class="fas fa-search"></i> 查询</button>
+
+                        <div class="action-buttons">
+                            <button class="btn-add" @click="openNoticeModal('add')"><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="notice-list">
+                        <div v-for="notice in filteredNotices" :key="notice.id" class="notice-item">
+                            <div class="notice-icon">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <div class="notice-content">
+                                <div class="notice-title">[[ notice.title ]]</div>
+                                <div style="color: var(--gray); font-size: 14px;">[[ notice.content ]]</div>
+                                <div class="notice-time">发布时间：[[ formatDate(notice.createTime) ]] | 发布人：[[ notice.author ]]</div>
+                            </div>
+                            <div class="table-actions">
+                                <button class="table-btn" @click="openNoticeModal('edit', notice)"><i class="fas fa-edit"></i> 编辑</button>
+                                <button class="table-btn" @click="deleteNotice(notice.id)"><i class="fas fa-trash"></i> 删除</button>
+                            </div>
+                        </div>
+                        <div v-if="filteredNotices.length === 0" style="padding: 30px; text-align: center; color: var(--gray);">
+                            <i class="fas fa-inbox"></i> 暂无通知公告
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 系统设置 -->
+                <div v-if="currentMenu === 'system'">
+                    <!-- 权限验证 -->
+                    <div v-if="!hasPermission('system_setting')" class="empty-state">
+                        <i class="fas fa-lock"></i>
+                        <p>您没有访问该页面的权限，请联系管理员</p>
+                    </div>
+
+                    <div v-else>
+                        <div class="settings-form">
+                            <div class="settings-group">
+                                <h4><i class="fas fa-cog"></i> 基础设置</h4>
+                                <div class="settings-row">
+                                    <div class="settings-label">系统名称：</div>
+                                    <div class="settings-control">
+                                        <input v-model="systemSettings.systemName" placeholder="请输入系统名称">
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-label">系统logo：</div>
+                                    <div class="settings-control">
+                                        <input v-model="systemSettings.logoUrl" placeholder="请输入logo图片URL">
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-label">是否开启验证码：</div>
+                                    <div class="settings-control">
+                                        <label class="switch">
+                                            <input type="checkbox" v-model="systemSettings.enableCaptcha">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="settings-group">
+                                <h4><i class="fas fa-shield-alt"></i> 安全设置</h4>
+                                <div class="settings-row">
+                                    <div class="settings-label">密码有效期：</div>
+                                    <div class="settings-control">
+                                        <input type="number" v-model="systemSettings.passwordExpireDays" placeholder="天">
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-label">登录失败锁定：</div>
+                                    <div class="settings-control">
+                                        <label class="switch">
+                                            <input type="checkbox" v-model="systemSettings.enableLoginLock">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-label">最大失败次数：</div>
+                                    <div class="settings-control">
+                                        <input type="number" v-model="systemSettings.maxLoginFail" placeholder="次">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="settings-group">
+                                <h4><i class="fas fa-envelope"></i> 邮件设置</h4>
+                                <div class="settings-row">
+                                    <div class="settings-label">SMTP服务器：</div>
+                                    <div class="settings-control">
+                                        <input v-model="systemSettings.smtpServer" placeholder="请输入SMTP服务器地址">
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-label">SMTP端口：</div>
+                                    <div class="settings-control">
+                                        <input type="number" v-model="systemSettings.smtpPort" placeholder="请输入端口号">
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-label">发件人邮箱：</div>
+                                    <div class="settings-control">
+                                        <input v-model="systemSettings.smtpEmail" placeholder="请输入发件人邮箱">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button class="modal-btn btn-confirm" @click="saveSystemSettings"><i class="fas fa-save"></i> 保存设置</button>
+                                <button class="modal-btn btn-cancel" @click="resetSystemSettings"><i class="fas fa-undo"></i> 恢复默认</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 用户弹窗 ========== -->
+            <div v-if="showUserModal" class="modal-mask">
+                <div class="modal-box">
+                    <div class="modal-header">
+                        <h3>
+                            <span v-if="userModalType === 'add'">新增用户</span>
+                            <span v-if="userModalType === 'edit'">修改用户</span>
+                            <span v-if="userModalType === 'detail'">用户详情</span>
+                        </h3>
+                        <button class="modal-close" @click="closeUserModal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- 用户头像上传区域 -->
+                        <div v-if="userModalType !== 'detail'" class="form-group">
+                            <label>用户头像</label>
+                            <div style="display: flex; align-items: center; gap: 20px;">
+                                <img :src="userAvatarPreview || userForm.avatar || 'https://picsum.photos/id/64/200/200'" alt="用户头像预览" class="avatar-preview">
+                                <div>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        ref="userAvatarInput"
+                                        @change="handleUserAvatarUpload"
+                                        style="margin-bottom: 10px;"
+                                    >
+                                    <p style="font-size: 12px; color: var(--gray);">支持JPG、PNG格式，建议尺寸200x200</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>账号</label>
+                            <input v-model="userForm.account" :disabled="userModalType === 'detail'" placeholder="请输入账号">
+                        </div>
+                        <div class="form-group">
+                            <label>姓名</label>
+                            <input v-model="userForm.name" :disabled="userModalType === 'detail'" placeholder="请输入姓名">
+                        </div>
+                        <div class="form-group">
+                            <label>性别</label>
+                            <select v-model="userForm.gender" :disabled="userModalType === 'detail'">
+                                <option value="男">男</option>
+                                <option value="女">女</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>手机</label>
+                            <input v-model="userForm.phone" :disabled="userModalType === 'detail'" placeholder="请输入手机号">
+                        </div>
+                        <div class="form-group">
+                            <label>邮箱</label>
+                            <input v-model="userForm.email" :disabled="userModalType === 'detail'" placeholder="请输入邮箱">
+                        </div>
+                        <div class="form-group">
+                            <label>身份证</label>
+                            <input v-model="userForm.idCard" :disabled="userModalType === 'detail'" placeholder="请输入身份证号">
+                        </div>
+                        <div class="form-group">
+                            <label>角色</label>
+                            <select v-model="userForm.role" :disabled="userModalType === 'detail'">
+                                <option value="admin">管理员</option>
+                                <option value="user">普通员工</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>状态</label>
+                            <select v-model="userForm.status" :disabled="userModalType === 'detail'">
+                                <option value="active">启用</option>
+                                <option value="inactive">禁用</option>
+                                <option value="cancelled">已注销</option>
+                            </select>
+                        </div>
+                        <div class="form-group" v-if="userModalType === 'add'">
+                            <label>初始密码</label>
+                            <input type="password" v-model="userForm.password" placeholder="请设置初始密码">
+                        </div>
+                    </div>
+                    <div class="modal-footer" v-if="userModalType !== 'detail'">
+                        <button class="modal-btn btn-cancel" @click="closeUserModal">取消</button>
+                        <button class="modal-btn btn-confirm" @click="saveUser">
+                            <span v-if="userModalType === 'add'">新增</span>
+                            <span v-if="userModalType === 'edit'">保存</span>
+                        </button>
+                    </div>
+                    <div class="modal-footer" v-if="userModalType === 'detail'">
+                        <button class="modal-btn btn-confirm" @click="closeUserModal">关闭</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 任务弹窗 ========== -->
+            <div v-if="showTaskModal" class="modal-mask">
+                <div class="modal-box">
+                    <div class="modal-header">
+                        <h3>
+                            <span v-if="taskModalType === 'add'">新增任务</span>
+                            <span v-if="taskModalType === 'edit'">修改任务</span>
+                            <span v-if="taskModalType === 'detail'">任务详情</span>
+                        </h3>
+                        <button class="modal-close" @click="closeTaskModal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>任务名称</label>
+                            <input v-model="taskForm.title" :disabled="taskModalType === 'detail'" placeholder="请输入任务名称">
+                        </div>
+                        <div class="form-group">
+                            <label>负责人</label>
+                            <input v-model="taskForm.manager" :disabled="taskModalType === 'detail'" placeholder="请输入负责人姓名">
+                        </div>
+                        <div class="form-group">
+                            <label>创建时间</label>
+                            <input type="date" v-model="taskForm.createTime" :disabled="taskModalType === 'detail'">
+                        </div>
+                        <div class="form-group">
+                            <label>截止时间</label>
+                            <input type="date" v-model="taskForm.deadline" :disabled="taskModalType === 'detail'">
+                        </div>
+                        <div class="form-group">
+                            <label>任务状态</label>
+                            <select v-model="taskForm.status" :disabled="taskModalType === 'detail'">
+                                <option value="pending">待完成</option>
+                                <option value="completed">已完成</option>
+                                <option value="overdue">已逾期</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>任务描述</label>
+                            <textarea v-model="taskForm.desc" :disabled="taskModalType === 'detail'" rows="4" placeholder="请输入任务描述"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer" v-if="taskModalType !== 'detail'">
+                        <button class="modal-btn btn-cancel" @click="closeTaskModal">取消</button>
+                        <button class="modal-btn btn-confirm" @click="saveTask">
+                            <span v-if="taskModalType === 'add'">新增</span>
+                            <span v-if="taskModalType === 'edit'">保存</span>
+                        </button>
+                    </div>
+                    <div class="modal-footer" v-if="taskModalType === 'detail'">
+                        <button class="modal-btn btn-confirm" @click="closeTaskModal">关闭</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 角色弹窗 ========== -->
+            <div v-if="showRoleModal" class="modal-mask">
+                <div class="modal-box">
+                    <div class="modal-header">
+                        <h3>
+                            <span v-if="roleModalType === 'add'">新增角色</span>
+                            <span v-if="roleModalType === 'edit'">编辑角色</span>
+                        </h3>
+                        <button class="modal-close" @click="closeRoleModal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>角色名称</label>
+                            <input v-model="roleForm.name" placeholder="请输入角色名称">
+                        </div>
+                        <div class="form-group">
+                            <label>角色描述</label>
+                            <textarea v-model="roleForm.desc" rows="3" placeholder="请输入角色描述"></textarea>
+                        </div>
+                        <div style="margin-top: 20px;">
+                            <h4 style="color: var(--primary); margin-bottom: 15px;"><i class="fas fa-lock"></i> 权限设置</h4>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                                <div>
+                                    <label class="switch">
+                                        <input type="checkbox" v-model="roleForm.permissions.user_manage">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <span style="margin-left: 10px;">用户管理</span>
+                                </div>
+                                <div>
+                                    <label class="switch">
+                                        <input type="checkbox" v-model="roleForm.permissions.role_manage">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <span style="margin-left: 10px;">角色管理</span>
+                                </div>
+                                <div>
+                                    <label class="switch">
+                                        <input type="checkbox" v-model="roleForm.permissions.task_manage">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <span style="margin-left: 10px;">任务管理</span>
+                                </div>
+                                <div>
+                                    <label class="switch">
+                                        <input type="checkbox" v-model="roleForm.permissions.stats_view">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <span style="margin-left: 10px;">数据统计</span>
+                                </div>
+                                <div>
+                                    <label class="switch">
+                                        <input type="checkbox" v-model="roleForm.permissions.report_export">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <span style="margin-left: 10px;">报表导出</span>
+                                </div>
+                                <div>
+                                    <label class="switch">
+                                        <input type="checkbox" v-model="roleForm.permissions.system_setting">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <span style="margin-left: 10px;">系统设置</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="modal-btn btn-cancel" @click="closeRoleModal">取消</button>
+                        <button class="modal-btn btn-confirm" @click="saveRole">
+                            <span v-if="roleModalType === 'add'">新增</span>
+                            <span v-if="roleModalType === 'edit'">保存</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 通知公告弹窗 ========== -->
+            <div v-if="showNoticeModal" class="modal-mask">
+                <div class="modal-box">
+                    <div class="modal-header">
+                        <h3>
+                            <span v-if="noticeModalType === 'add'">新增公告</span>
+                            <span v-if="noticeModalType === 'edit'">编辑公告</span>
+                        </h3>
+                        <button class="modal-close" @click="closeNoticeModal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>公告标题</label>
+                            <input v-model="noticeForm.title" placeholder="请输入公告标题">
+                        </div>
+                        <div class="form-group">
+                            <label>公告内容</label>
+                            <textarea v-model="noticeForm.content" rows="6" placeholder="请输入公告内容"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>发布人</label>
+                            <input v-model="noticeForm.author" placeholder="请输入发布人姓名">
+                        </div>
+                        <div class="form-group">
+                            <label>发布时间</label>
+                            <input type="datetime-local" v-model="noticeForm.createTime">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="modal-btn btn-cancel" @click="closeNoticeModal">取消</button>
+                        <button class="modal-btn btn-confirm" @click="saveNotice">
+                            <span v-if="noticeModalType === 'add'">发布</span>
+                            <span v-if="noticeModalType === 'edit'">保存</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 用户权限弹窗 ========== -->
+            <div v-if="showPermissionModal" class="modal-mask">
+                <div class="modal-box">
+                    <div class="modal-header">
+                        <h3>设置用户权限 - [[ permissionUser.name ]]</h3>
+                        <button class="modal-close" @click="closePermissionModal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                            <div>
+                                <label class="switch">
+                                    <input type="checkbox" v-model="permissionForm.user_manage">
+                                    <span class="slider"></span>
+                                </label>
+                                <span style="margin-left: 10px;">用户管理</span>
+                            </div>
+                            <div>
+                                <label class="switch">
+                                    <input type="checkbox" v-model="permissionForm.role_manage">
+                                    <span class="slider"></span>
+                                </label>
+                                <span style="margin-left: 10px;">角色管理</span>
+                            </div>
+                            <div>
+                                <label class="switch">
+                                    <input type="checkbox" v-model="permissionForm.task_manage">
+                                    <span class="slider"></span>
+                                </label>
+                                <span style="margin-left: 10px;">任务管理</span>
+                            </div>
+                            <div>
+                                <label class="switch">
+                                    <input type="checkbox" v-model="permissionForm.stats_view">
+                                    <span class="slider"></span>
+                                </label>
+                                <span style="margin-left: 10px;">数据统计</span>
+                            </div>
+                            <div>
+                                <label class="switch">
+                                    <input type="checkbox" v-model="permissionForm.report_export">
+                                    <span class="slider"></span>
+                                </label>
+                                <span style="margin-left: 10px;">报表导出</span>
+                            </div>
+                            <div>
+                                <label class="switch">
+                                    <input type="checkbox" v-model="permissionForm.system_setting">
+                                    <span class="slider"></span>
+                                </label>
+                                <span style="margin-left: 10px;">系统设置</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="modal-btn btn-cancel" @click="closePermissionModal">取消</button>
+                        <button class="modal-btn btn-confirm" @click="saveUserPermission">保存权限</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const { createApp } = Vue;
+    createApp({
+        delimiters: ['[[', ']]'],
+        data() {
+            return {
+                // ========== 分页变量 ==========
+                currentPage: 1,
+                pageSize: 10,
+                // ========== 登录/注册相关 ==========
+                token: localStorage.getItem('access_token') || '',
+                currentUser: JSON.parse(localStorage.getItem('task_user') || '{}'),
+                isRegister: false,
+                isForgotPassword: false,
+                forgotStep: 1,
+                loginType: 'account',
+                loginForm: {
+                    username: localStorage.getItem('remember_username') || '',
+                    password: localStorage.getItem('remember_password') || '',
+                    role: localStorage.getItem('remember_role') || 'admin',
+                    remember: localStorage.getItem('remember_username') ? true : false
+                },
+                phoneLoginForm: { phone: '', code: '', remember: false },
+                registerForm: { username: '', password: '', phone: '', code: '', role: 'user' },
+                forgotForm: { phone: '', code: '', newPassword: '', confirmPassword: '' },
+
+                // 验证码相关
+                codeText: '获取验证码', codeDisabled: false, codeTimer: null,
+                loginCodeText: '获取验证码', loginCodeDisabled: false, loginCodeTimer: null,
+                forgotCodeText: '获取验证码', forgotCodeDisabled: false, forgotCodeTimer: null,
+                sentCodes: {},
+                loading: false,
+                errorMsg: '',
+
+                // 菜单管理
+                currentMenu: 'home',
+
+                // 个人中心
+                profileForm: { username: '', phone: '', oldPassword: '', newPassword: '', confirmPassword: '' },
+                avatarPreview: '',
+                userAvatarPreview: '',
+
+                // 用户管理 - 从 API 加载，初始为空
+                users: [],
+                searchUser: '',
+                showUserModal: false,
+                userModalType: 'add',
+                userForm: {
+                    id: '', account: '', name: '', gender: '男', phone: '', email: '',
+                    idCard: '', avatar: '', role: 'user', status: 'active', password: ''
+                },
+
+                // 角色权限（模拟数据）
+                roles: [
+                    { id: 1, name: '超级管理员', desc: '拥有系统所有权限', permissions: { user_manage: true, role_manage: true, task_manage: true, stats_view: true, report_export: true, system_setting: true } },
+                    { id: 2, name: '普通管理员', desc: '拥有基础管理权限', permissions: { user_manage: false, role_manage: false, task_manage: true, stats_view: true, report_export: false, system_setting: false } },
+                    { id: 3, name: '普通员工', desc: '仅拥有任务操作权限', permissions: { user_manage: false, role_manage: false, task_manage: true, stats_view: false, report_export: false, system_setting: false } }
+                ],
+                searchRole: '',
+                showRoleModal: false,
+                roleModalType: 'add',
+                roleForm: {
+                    id: '', name: '', desc: '',
+                    permissions: { user_manage: false, role_manage: false, task_manage: false, stats_view: false, report_export: false, system_setting: false }
+                },
+
+                // 用户权限弹窗
+                showPermissionModal: false,
+                permissionUser: {},
+                permissionForm: { user_manage: false, role_manage: false, task_manage: false, stats_view: false, report_export: false, system_setting: false },
+
+                // 任务管理 - 从 API 加载
+                tasks: [],
+                searchTask: '',
+                showTaskModal: false,
+                taskModalType: 'add',
+                taskForm: { id: '', title: '', manager: '', createTime: '', deadline: '', status: 'pending', desc: '' },
+
+                // 数据统计
+                reportForm: { type: 'all', startDate: '', endDate: '' },
+                pieChart: null,
+                lineChart: null,
+
+                // 通知公告（模拟）
+                notices: [
+                    { id: 1, title: '系统升级通知', content: '系统将于2026年3月20日凌晨2点进行升级维护...', createTime: '2026-03-15', author: '系统管理员' },
+                    { id: 2, title: '新功能上线', content: '新增任务统计报表功能...', createTime: '2026-03-10', author: '产品部' },
+                    { id: 3, title: '安全提醒', content: '请定期修改密码...', createTime: '2026-03-01', author: '安全部' }
+                ],
+                searchNotice: '',
+                showNoticeModal: false,
+                noticeModalType: 'add',
+                noticeForm: { id: '', title: '', content: '', createTime: '', author: '' },
+
+                // 系统设置
+                systemSettings: {
+                    systemName: '任务管理系统', logoUrl: '', enableCaptcha: true,
+                    passwordExpireDays: 90, enableLoginLock: true, maxLoginFail: 5,
+                    smtpServer: 'smtp.qq.com', smtpPort: 465, smtpEmail: ''
+                },
+                defaultSystemSettings: {}
+            };
+        },
+computed: {
+    filteredUsers() {
+        let users = this.users;
+        if (this.searchUser) {
+            users = users.filter(user =>
+                (user.name || user.username)?.toLowerCase().includes(this.searchUser.toLowerCase()) ||
+                user.account?.toLowerCase().includes(this.searchUser.toLowerCase())
+            );
+        }
+        const start = (this.currentPage - 1) * this.pageSize;
+        const end = start + this.pageSize;
+        return users.slice(start, end);
+    },
+    totalUsers() {
+        let users = this.users;
+        if (this.searchUser) {
+            users = users.filter(user =>
+                (user.name || user.username)?.toLowerCase().includes(this.searchUser.toLowerCase()) ||
+                user.account?.toLowerCase().includes(this.searchUser.toLowerCase())
+            );
+        }
+        return users.length;
+    },
+    totalPages() {
+        return Math.ceil(this.totalUsers / this.pageSize);
+    },
+    filteredRoles() {
+        if (!this.searchRole) return this.roles;
+        return this.roles.filter(role => role.name.toLowerCase().includes(this.searchRole.toLowerCase()));
+    },
+    filteredTasksByStatus() {
+        let filtered = this.tasks;
+        if (this.searchTask) {
+            filtered = filtered.filter(task =>
+                task.title?.toLowerCase().includes(this.searchTask.toLowerCase()) ||
+                task.manager?.toLowerCase().includes(this.searchTask.toLowerCase())
+            );
+        }
+        if (this.currentMenu === 'task-pending') {
+            filtered = filtered.filter(task => task.status === 'pending');
+        } else if (this.currentMenu === 'task-completed') {
+            filtered = filtered.filter(task => task.status === 'completed');
+        } else if (this.currentMenu === 'task-overdue') {
+            filtered = filtered.filter(task => task.status === 'overdue');
+        }
+        return filtered;
+    },
+    filteredNotices() {
+        if (!this.searchNotice) return this.notices;
+        return this.notices.filter(notice =>
+            notice.title.toLowerCase().includes(this.searchNotice.toLowerCase()) ||
+            notice.content.toLowerCase().includes(this.searchNotice.toLowerCase())
+        );
+    },
+    taskStats() {
+        return {
+            total: this.tasks.length,
+            pending: this.tasks.filter(t => t.status === 'pending').length,
+            completed: this.tasks.filter(t => t.status === 'completed').length,
+            overdue: this.tasks.filter(t => t.status === 'overdue').length
+        };
+    },
+    monthlyStats() {
+        const months = ['2025-12', '2026-01', '2026-02', '2026-03'];
+        const completed = months.map(m => this.tasks.filter(t => t.status === 'completed' && t.createTime?.startsWith(m)).length);
+        const created = months.map(m => this.tasks.filter(t => t.createTime?.startsWith(m)).length);
+        return { months, completed, created };
+    }
+},
+        methods: {
+            // ========== Axios 配置 ==========
+            setupAxios() {
+                axios.defaults.baseURL = 'http://127.0.0.1:8000/api/';
+
+                const self = this;
+
+                axios.interceptors.request.use(
+                    config => {
+                        const token = localStorage.getItem('access_token');
+                        if (token) {
+                            config.headers.Authorization = `Bearer ${token}`;
+                        }
+                        return config;
+                    },
+                    error => Promise.reject(error)
+                );
+
+                axios.interceptors.response.use(
+                    response => response,
+                    async function(error) {
+                        const originalRequest = error.config;
+                        if (error.response?.status === 401 && !originalRequest._retry) {
+                            originalRequest._retry = true;
+                            try {
+                                const refreshToken = localStorage.getItem('refresh_token');
+                                const res = await axios.post('token/refresh/', { refresh: refreshToken });
+                                localStorage.setItem('access_token', res.data.access);
+                                originalRequest.headers.Authorization = `Bearer ${res.data.access}`;
+                                return axios(originalRequest);
+                            } catch (refreshError) {
+                                localStorage.removeItem('access_token');
+                                localStorage.removeItem('refresh_token');
+                                localStorage.removeItem('task_user');
+                                self.token = '';
+                                self.currentUser = {};
+                                window.location.reload();
+                                return Promise.reject(refreshError);
+                            }
+                        }
+                        return Promise.reject(error);
+                    }
+                );
+            },
+
+            // ========== API 调用 ==========
+            async fetchUsers() {
+                try {
+                    const res = await axios.get('users/');
+                    this.users = res.data.map(user => ({
+                        id: user.id,
+                        account: user.username,
+                        name: user.username,
+                        phone: user.phone || '',
+                        email: user.email || '',
+                        avatar: user.avatar || '',
+                        role: user.role,
+                        status: user.status,
+                        permissions: user.permissions || {}
+                    }));
+                } catch (err) {
+                    console.error('加载用户失败', err);
+                }
+            },
+
+            async fetchTasks() {
+                try {
+                    const res = await axios.get('tasks/');
+                    this.tasks = res.data.map(task => ({
+                        id: task.id,
+                        title: task.title,
+                        manager: task.manager,
+                        createTime: task.create_time,
+                        deadline: task.deadline,
+                        status: task.status,
+                        desc: task.desc
+                    }));
+                } catch (err) {
+                    console.error('加载任务失败', err);
+                }
+            },
+
+            // ========== 登录 ==========
+async handleLogin() {
+    if (!this.loginForm.username || !this.loginForm.password) {
+        this.errorMsg = '请输入用户名和密码';
+        return;
+    }
+
+    this.loading = true;
+    this.errorMsg = '';
+
+    try {
+        // 发送登录请求，带上用户选择的角色
+        const res = await axios.post('token/', {
+            username: this.loginForm.username,
+            password: this.loginForm.password,
+            role: this.loginForm.role  // ✅ 重要：传递用户选择的角色
+        });
+
+        const { access, refresh, username, user_id, role, phone, avatar, permissions } = res.data;
+
+        localStorage.setItem('access_token', access);
+        localStorage.setItem('refresh_token', refresh);
+
+        // ✅ 使用后端返回的 role（数据库中的真实角色）
+        this.currentUser = {
+            id: user_id,
+            username: username,
+            role: role,  // 使用后端返回的角色
+            phone: phone || '',
+            avatar: avatar || '',
+            permissions: permissions || {}
+        };
+        localStorage.setItem('task_user', JSON.stringify(this.currentUser));
+
+        this.token = access;
+
+        if (this.loginForm.remember) {
+            localStorage.setItem('remember_username', this.loginForm.username);
+            localStorage.setItem('remember_password', this.loginForm.password);
+            localStorage.setItem('remember_role', role);
+        } else {
+            localStorage.removeItem('remember_username');
+            localStorage.removeItem('remember_password');
+            localStorage.removeItem('remember_role');
+        }
+
+        this.profileForm.username = this.currentUser.username;
+        this.profileForm.phone = this.currentUser.phone || '';
+
+        await this.fetchTasks();
+        await this.fetchUsers();
+
+    } catch (err) {
+        console.error('登录错误:', err);
+        // 处理各种错误消息
+        if (err.response?.data?.detail) {
+            this.errorMsg = err.response.data.detail;
+        } else if (err.response?.data?.message) {
+            this.errorMsg = err.response.data.message;
+        } else if (err.response?.data?.error) {
+            this.errorMsg = err.response.data.error;
+        } else {
+            this.errorMsg = '用户名或密码错误';
+        }
+    } finally {
+        this.loading = false;
+    }
+},
+
+// ========== 注册（修复版） ==========
+async handleRegister() {
+    if (!this.registerForm.username) {
+        this.errorMsg = '请输入用户名';
+        return;
+    }
+    if (!this.registerForm.password) {
+        this.errorMsg = '请输入密码';
+        return;
+    }
+    if (this.registerForm.password.length < 6) {
+        this.errorMsg = '密码长度至少6位';
+        return;
+    }
+    if (!this.registerForm.phone) {
+        this.errorMsg = '请输入手机号码';
+        return;
+    }
+    if (!/^1[3-9]\d{9}$/.test(this.registerForm.phone)) {
+        this.errorMsg = '请输入正确的手机号码';
+        return;
+    }
+    if (!this.registerForm.code) {
+        this.errorMsg = '请输入验证码';
+        return;
+    }
+
+    this.loading = true;
+    this.errorMsg = '';
+
+    try {
+        const response = await axios.post('register/', {
+            username: this.registerForm.username,
+            password: this.registerForm.password,
+            phone: this.registerForm.phone,
+            role: this.registerForm.role
+        });
+
+        if (response.data.code === 200 || response.data.message === '用户注册成功') {
+            alert('注册成功！请使用账号密码登录');
+            this.switchToLogin();
+            // 清空注册表单
+            this.registerForm = { username: '', password: '', phone: '', code: '', role: 'user' };
+        } else {
+            this.errorMsg = response.data.message || '注册失败';
+        }
+    } catch (err) {
+        console.error('注册错误:', err);
+        if (err.response?.data?.errors) {
+            const errors = err.response.data.errors;
+            this.errorMsg = Object.values(errors).flat()[0] || '注册失败';
+        } else if (err.response?.data?.message) {
+            this.errorMsg = err.response.data.message;
+        } else {
+            this.errorMsg = '注册失败，请重试';
+        }
+    } finally {
+        this.loading = false;
+    }
+},
+
+// ========== 手机号验证码登录（修复版） ==========
+async handlePhoneLogin() {
+    if (!this.phoneLoginForm.phone) {
+        this.errorMsg = '请输入手机号码';
+        return;
+    }
+    if (!this.phoneLoginForm.code) {
+        this.errorMsg = '请输入验证码';
+        return;
+    }
+
+    if (!/^1[3-9]\d{9}$/.test(this.phoneLoginForm.phone)) {
+        this.errorMsg = '请输入正确的手机号码';
+        return;
+    }
+
+    this.loading = true;
+    this.errorMsg = '';
+
+    try {
+        const res = await axios.post('phone-login/', {
+            phone: this.phoneLoginForm.phone,
+            code: this.phoneLoginForm.code
+        });
+
+        if (!res.data.access || !res.data.refresh) {
+            throw new Error(res.data.message || '登录失败');
+        }
+
+        const { access, refresh, username, user_id, role, phone, avatar, permissions } = res.data;
+
+        localStorage.setItem('access_token', access);
+        localStorage.setItem('refresh_token', refresh);
+
+        this.currentUser = {
+            id: user_id,
+            username: username,
+            role: role || 'user',
+            phone: phone || '',
+            avatar: avatar || '',
+            permissions: permissions || {}
+        };
+        localStorage.setItem('task_user', JSON.stringify(this.currentUser));
+
+        this.token = access;
+
+        if (this.phoneLoginForm.remember) {
+            localStorage.setItem('remember_username', username);
+            localStorage.setItem('remember_role', role);
+        }
+
+        this.profileForm.username = this.currentUser.username;
+        this.profileForm.phone = this.currentUser.phone;
+
+        await this.fetchTasks();
+        await this.fetchUsers();
+
+    } catch (err) {
+        console.error('手机号登录错误:', err);
+        this.errorMsg = err.response?.data?.error || err.response?.data?.message || '验证码错误或已过期';
+    } finally {
+        this.loading = false;
+    }
+},
+
+            // ========== 用户管理 CRUD ==========
+            async saveUser() {
+                if (!this.userForm.account || !this.userForm.name) {
+                    alert('请填写账号和姓名');
+                    return;
+                }
+                try {
+                    if (this.userModalType === 'add') {
+                        await axios.post('users/', {
+                            username: this.userForm.account,
+                            password: this.userForm.password || '123456',
+                            phone: this.userForm.phone,
+                            email: this.userForm.email,
+                            role: this.userForm.role,
+                            status: this.userForm.status
+                        });
+                        alert('用户新增成功');
+                    } else {
+                        await axios.patch(`users/${this.userForm.id}/`, {
+                            username: this.userForm.account,
+                            phone: this.userForm.phone,
+                            email: this.userForm.email,
+                            role: this.userForm.role,
+                            status: this.userForm.status
+                        });
+                        alert('用户修改成功');
+                    }
+                    await this.fetchUsers();
+                    this.closeUserModal();
+                } catch (err) {
+                    console.error('保存用户错误:', err);
+                    alert('操作失败：' + (err.response?.data?.message || '未知错误'));
+                }
+            },
+
+            async deleteUser(userId) {
+                if (confirm('确定删除该用户吗？')) {
+                    try {
+                        await axios.delete(`users/${userId}/`);
+                        await this.fetchUsers();
+                        alert('用户删除成功');
+                    } catch (err) {
+                        alert('删除失败');
+                    }
+                }
+            },
+
+            // ========== 任务管理 CRUD ==========
+            async saveTask() {
+                if (!this.taskForm.title || !this.taskForm.manager) {
+                    alert('请填写任务名称和负责人');
+                    return;
+                }
+                const taskData = {
+                    title: this.taskForm.title,
+                    manager: this.taskForm.manager,
+                    create_time: this.taskForm.createTime,
+                    deadline: this.taskForm.deadline,
+                    status: this.taskForm.status,
+                    desc: this.taskForm.desc
+                };
+                try {
+                    if (this.taskModalType === 'add') {
+                        await axios.post('tasks/', taskData);
+                        alert('任务新增成功');
+                    } else {
+                        await axios.put(`tasks/${this.taskForm.id}/`, taskData);
+                        alert('任务修改成功');
+                    }
+                    await this.fetchTasks();
+                    this.closeTaskModal();
+                    if (this.currentMenu === 'stats') this.$nextTick(() => this.initCharts());
+                } catch (err) {
+                    alert('操作失败');
+                }
+            },
+
+            async deleteTask(taskId) {
+                if (confirm('确定删除该任务吗？')) {
+                    try {
+                        await axios.delete(`tasks/${taskId}/`);
+                        await this.fetchTasks();
+                        alert('任务删除成功');
+                        if (this.currentMenu === 'stats') this.$nextTick(() => this.initCharts());
+                    } catch (err) {
+                        alert('删除失败');
+                    }
+                }
+            },
+
+// ========== 个人中心（修复版 - 支持用户名、手机号、密码修改） ==========
+async saveProfile() {
+    // 验证用户名
+    if (!this.profileForm.username || this.profileForm.username.trim() === '') {
+        alert('请输入用户名');
+        return;
+    }
+
+    // 验证手机号格式（如果填写了）
+    if (this.profileForm.phone && !/^1[3-9]\d{9}$/.test(this.profileForm.phone)) {
+        alert('请输入正确的手机号码');
+        return;
+    }
+
+    // 验证密码（如果填写了）
+    if (this.profileForm.newPassword) {
+        if (this.profileForm.newPassword.length < 6) {
+            alert('新密码长度至少6位');
+            return;
+        }
+        if (this.profileForm.newPassword !== this.profileForm.confirmPassword) {
+            alert('两次输入的密码不一致');
+            return;
+        }
+        if (!this.profileForm.oldPassword) {
+            alert('请输入原密码');
+            return;
+        }
+    }
+
+    this.loading = true;
+
+    try {
+        // 构建更新数据
+        const updateData = {
+            username: this.profileForm.username.trim(),
+            phone: this.profileForm.phone || ''
+        };
+
+        // 如果有密码修改，添加密码字段
+        if (this.profileForm.newPassword) {
+            updateData.oldPassword = this.profileForm.oldPassword;
+            updateData.newPassword = this.profileForm.newPassword;
+        }
+
+        // 发送请求
+        const response = await axios.patch('users/me/', updateData);
+
+        // ✅ 修复：兼容多种响应格式
+        if (response.status === 200) {
+            // 更新本地用户信息
+            this.currentUser.username = this.profileForm.username.trim();
+            this.currentUser.phone = this.profileForm.phone || '';
+            localStorage.setItem('task_user', JSON.stringify(this.currentUser));
+
+            alert('个人信息修改成功');
+
+            // 如果修改了密码，提示重新登录
+            if (this.profileForm.newPassword) {
+                alert('密码已修改，请重新登录');
+                setTimeout(() => {
+                    this.handleLogout();
+                }, 1500);
+            }
+
+            // 清空密码输入框
+            this.profileForm.oldPassword = '';
+            this.profileForm.newPassword = '';
+            this.profileForm.confirmPassword = '';
+        } else {
+            alert(response.data?.message || '修改失败');
+        }
+
+    } catch (err) {
+        console.error('修改失败:', err);
+        // ✅ 修复：显示具体错误信息
+        const errorMsg = err.response?.data?.message || err.response?.data?.error || '修改失败，请重试';
+        alert(errorMsg);
+    } finally {
+        this.loading = false;
+    }
+},
+
+            // ========== 图表 ==========
+            initCharts() {
+                this.initPieChart();
+                this.initLineChart();
+            },
+            initPieChart() {
+                const chartDom = document.getElementById('pieChart');
+                if (!chartDom) return;
+                if (this.pieChart) this.pieChart.dispose();
+                this.pieChart = echarts.init(chartDom);
+                this.pieChart.setOption({
+                    tooltip: { trigger: 'item', formatter: '{a} <br/>{b}: {c} ({d}%)' },
+                    legend: { bottom: '5%', left: 'center', data: ['待完成', '已完成', '已逾期'] },
+                    series: [{
+                        name: '任务状态', type: 'pie', radius: ['40%', '70%'], center: ['50%', '45%'],
+                        data: [
+                            { value: this.taskStats.pending, name: '待完成', itemStyle: { color: '#f59e0b' } },
+                            { value: this.taskStats.completed, name: '已完成', itemStyle: { color: '#16a34a' } },
+                            { value: this.taskStats.overdue, name: '已逾期', itemStyle: { color: '#dc2626' } }
+                        ]
+                    }]
+                });
+                window.addEventListener('resize', () => this.pieChart?.resize());
+            },
+            initLineChart() {
+                const chartDom = document.getElementById('lineChart');
+                if (!chartDom) return;
+                if (this.lineChart) this.lineChart.dispose();
+                this.lineChart = echarts.init(chartDom);
+                const { months, completed, created } = this.monthlyStats;
+                this.lineChart.setOption({
+                    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+                    legend: { data: ['新增任务', '已完成任务'], bottom: '5%' },
+                    xAxis: { type: 'category', data: months.map(m => m.slice(5) + '月') },
+                    yAxis: { type: 'value', minInterval: 1 },
+                    series: [
+                        { name: '新增任务', type: 'line', smooth: true, data: created, itemStyle: { color: '#2c7a68' }, lineStyle: { width: 3 } },
+                        { name: '已完成任务', type: 'line', smooth: true, data: completed, itemStyle: { color: '#16a34a' }, lineStyle: { width: 3, type: 'dashed' } }
+                    ]
+                });
+                window.addEventListener('resize', () => this.lineChart?.resize());
+            },
+            exportChart(type) {
+                const chart = type === 'pie' ? this.pieChart : this.lineChart;
+                if (chart) {
+                    const url = chart.getDataURL({ type: 'png' });
+                    const link = document.createElement('a');
+                    link.download = `任务统计_${type === 'pie' ? '饼图' : '折线图'}_${Date.now()}.png`;
+                    link.href = url;
+                    link.click();
+                    alert('导出成功');
+                }
+            },
+
+            // ========== 头像上传（模拟） ==========
+            triggerAvatarUpload() { this.$refs.avatarInput?.click(); },
+            handleAvatarUpload(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.avatarPreview = e.target.result;
+                    alert('头像上传功能需要后端支持');
+                };
+                reader.readAsDataURL(file);
+            },
+            handleUserAvatarUpload(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.userAvatarPreview = e.target.result;
+                    this.userForm.avatar = this.userAvatarPreview;
+                };
+                reader.readAsDataURL(file);
+            },
+
+            // ========== 验证码功能（真实后端调用） ==========
+            async sendRegisterCode() {
+                if (!/^1[3-9]\d{9}$/.test(this.registerForm.phone)) {
+                    this.errorMsg = '请输入正确的手机号码';
+                    return;
+                }
+
+                this.codeDisabled = true;
+                let count = 60;
+                this.codeText = `${count}秒后重新获取`;
+
+                try {
+                    const res = await axios.post('send-code/', {
+                        phone: this.registerForm.phone,
+                        type: 'register'
+                    });
+
+                    if (res.data.code) {
+                        alert(`验证码: ${res.data.code}（5分钟内有效）`);
+                    } else if (res.data.message) {
+                        alert(res.data.message);
+                    } else {
+                        alert('验证码已发送，请注意查收');
+                    }
+
+                    // 存储验证码用于本地验证（开发调试用）
+                    if (res.data.code) {
+                        this.sentCodes[this.registerForm.phone] = {
+                            code: res.data.code,
+                            expireTime: Date.now() + 5 * 60 * 1000
+                        };
+                    }
+
+                } catch (err) {
+                    console.error('发送验证码错误:', err);
+                    this.errorMsg = err.response?.data?.error || '发送验证码失败';
+                    this.codeDisabled = false;
+                    return;
+                }
+
+                this.codeTimer = setInterval(() => {
+                    count--;
+                    this.codeText = `${count}秒后重新获取`;
+                    if (count <= 0) {
+                        clearInterval(this.codeTimer);
+                        this.codeText = '获取验证码';
+                        this.codeDisabled = false;
+                    }
+                }, 1000);
+            },
+
+            async sendLoginCode() {
+                if (!/^1[3-9]\d{9}$/.test(this.phoneLoginForm.phone)) {
+                    this.errorMsg = '请输入正确的手机号码';
+                    return;
+                }
+
+                this.loginCodeDisabled = true;
+                let count = 60;
+                this.loginCodeText = `${count}秒后重新获取`;
+
+                try {
+                    const res = await axios.post('send-code/', {
+                        phone: this.phoneLoginForm.phone,
+                        type: 'login'
+                    });
+
+                    if (res.data.code) {
+                        alert(`验证码: ${res.data.code}（5分钟内有效）`);
+                    } else if (res.data.message) {
+                        alert(res.data.message);
+                    } else {
+                        alert('验证码已发送，请注意查收');
+                    }
+
+                    if (res.data.code) {
+                        this.sentCodes[this.phoneLoginForm.phone] = {
+                            code: res.data.code,
+                            expireTime: Date.now() + 5 * 60 * 1000
+                        };
+                    }
+
+                } catch (err) {
+                    console.error('发送验证码错误:', err);
+                    this.errorMsg = err.response?.data?.error || '发送验证码失败';
+                    this.loginCodeDisabled = false;
+                    return;
+                }
+
+                this.loginCodeTimer = setInterval(() => {
+                    count--;
+                    this.loginCodeText = `${count}秒后重新获取`;
+                    if (count <= 0) {
+                        clearInterval(this.loginCodeTimer);
+                        this.loginCodeText = '获取验证码';
+                        this.loginCodeDisabled = false;
+                    }
+                }, 1000);
+            },
+
+            async sendForgotCode() {
+                if (!/^1[3-9]\d{9}$/.test(this.forgotForm.phone)) {
+                    this.errorMsg = '请输入正确的手机号码';
+                    return;
+                }
+
+                this.forgotCodeDisabled = true;
+                let count = 60;
+                this.forgotCodeText = `${count}秒后重新获取`;
+
+                try {
+                    const res = await axios.post('send-code/', {
+                        phone: this.forgotForm.phone,
+                        type: 'forgot'
+                    });
+
+                    if (res.data.code) {
+                        alert(`验证码: ${res.data.code}（5分钟内有效）`);
+                    } else if (res.data.message) {
+                        alert(res.data.message);
+                    } else {
+                        alert('验证码已发送，请注意查收');
+                    }
+
+                    if (res.data.code) {
+                        this.sentCodes[this.forgotForm.phone] = {
+                            code: res.data.code,
+                            expireTime: Date.now() + 5 * 60 * 1000
+                        };
+                    }
+
+                } catch (err) {
+                    console.error('发送验证码错误:', err);
+                    this.errorMsg = err.response?.data?.error || '发送验证码失败';
+                    this.forgotCodeDisabled = false;
+                    return;
+                }
+
+                this.forgotCodeTimer = setInterval(() => {
+                    count--;
+                    this.forgotCodeText = `${count}秒后重新获取`;
+                    if (count <= 0) {
+                        clearInterval(this.forgotCodeTimer);
+                        this.forgotCodeText = '获取验证码';
+                        this.forgotCodeDisabled = false;
+                    }
+                }, 1000);
+            },
+
+            async verifyForgotPhone() {
+                if (!this.forgotForm.phone) {
+                    this.errorMsg = '请输入手机号码';
+                    return;
+                }
+                if (!this.forgotForm.code) {
+                    this.errorMsg = '请输入验证码';
+                    return;
+                }
+
+                this.loading = true;
+                this.errorMsg = '';
+                try {
+                    await axios.post('verify-code/', {
+                        phone: this.forgotForm.phone,
+                        code: this.forgotForm.code
+                    });
+
+                    this.forgotStep = 2;
+
+                } catch (err) {
+                    console.error('验证失败:', err);
+                    this.errorMsg = err.response?.data?.error || '验证码错误或已过期';
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            async resetPassword() {
+                if (!this.forgotForm.newPassword) {
+                    this.errorMsg = '请输入新密码';
+                    return;
+                }
+                if (this.forgotForm.newPassword.length < 6) {
+                    this.errorMsg = '密码长度至少6位';
+                    return;
+                }
+                if (this.forgotForm.newPassword !== this.forgotForm.confirmPassword) {
+                    this.errorMsg = '两次输入的密码不一致';
+                    return;
+                }
+
+                this.loading = true;
+                this.errorMsg = '';
+                try {
+                    await axios.post('reset-password/', {
+                        phone: this.forgotForm.phone,
+                        password: this.forgotForm.newPassword
+                    });
+
+                    alert('密码重置成功，请使用新密码登录');
+                    this.switchToLogin();
+
+                } catch (err) {
+                    console.error('重置密码失败:', err);
+                    this.errorMsg = err.response?.data?.error || '重置密码失败';
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            // ========== 其他方法 ==========
+            hasPermission(permission) {
+                // 管理员拥有所有权限
+                if (this.currentUser.role === 'admin') return true;
+                // 普通员工根据权限判断
+                return this.currentUser.permissions && this.currentUser.permissions[permission] === true;
+            },
+
+            // 检查用户是否有管理员权限
+            isAdmin() {
+                return this.currentUser.role === 'admin';
+            },
+
+            changeMenu(menu) {
+                // 权限检查
+                if (menu === 'user' && !this.hasPermission('user_manage')) {
+                    alert('您没有用户管理权限');
+                    return;
+                }
+                if (menu === 'role' && !this.hasPermission('role_manage')) {
+                    alert('您没有角色管理权限');
+                    return;
+                }
+                if (menu === 'stats' && !this.hasPermission('stats_view')) {
+                    alert('您没有数据统计权限');
+                    return;
+                }
+                if (menu === 'report' && !this.hasPermission('report_export')) {
+                    alert('您没有报表导出权限');
+                    return;
+                }
+                if (menu === 'system' && !this.hasPermission('system_setting')) {
+                    alert('您没有系统设置权限');
+                    return;
+                }
+                this.currentMenu = menu;
+                if (menu === 'stats') this.$nextTick(() => this.initCharts());
+            },
+
+            handleLogout() {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                localStorage.removeItem('task_user');
+                localStorage.removeItem('remember_username');
+                localStorage.removeItem('remember_password');
+                localStorage.removeItem('remember_role');
+                this.token = '';
+                this.currentUser = {};
+                this.currentMenu = 'home';
+                // 清空登录表单
+                this.loginForm = { username: '', password: '', role: 'admin', remember: false };
+                this.phoneLoginForm = { phone: '', code: '', remember: false };
+            },
+
+            handleAccountCancel() {
+                if (confirm('确定要注销账号吗？此操作不可恢复！')) {
+                    const index = this.users.findIndex(u => u.id === this.currentUser.id);
+                    if (index !== -1) this.users[index].status = 'cancelled';
+                    this.handleLogout();
+                    alert('账号已注销');
+                }
+            },
+
+            goToFront() {
+                alert('已退出到前台');
+            },
+
+            switchLoginType(type) {
+                this.loginType = type;
+                this.errorMsg = '';
+            },
+
+            switchToRegister() {
+                this.isRegister = true;
+                this.isForgotPassword = false;
+                this.errorMsg = '';
+                // 清空注册表单
+                this.registerForm = { username: '', password: '', phone: '', code: '', role: 'user' };
+            },
+
+            switchToLogin() {
+                this.isRegister = false;
+                this.isForgotPassword = false;
+                this.forgotStep = 1;
+                this.errorMsg = '';
+                // 清空找回密码表单
+                this.forgotForm = { phone: '', code: '', newPassword: '', confirmPassword: '' };
+            },
+
+            switchToForgotPassword() {
+                this.isForgotPassword = true;
+                this.isRegister = false;
+                this.errorMsg = '';
+                this.forgotStep = 1;
+                // 清空表单
+                this.forgotForm = { phone: '', code: '', newPassword: '', confirmPassword: '' };
+            },
+
+            // 弹窗控制
+            openUserModal(type, user = {}) {
+                this.userModalType = type;
+                this.showUserModal = true;
+                this.userForm = { id: '', account: '', name: '', gender: '男', phone: '', email: '', idCard: '', avatar: '', role: 'user', status: 'active', password: '' };
+                if (type === 'edit' || type === 'detail') {
+                    this.userForm = { ...user };
+                    this.userAvatarPreview = user.avatar;
+                }
+            },
+            closeUserModal() { this.showUserModal = false; this.userAvatarPreview = ''; },
+
+            openTaskModal(type, task = {}) {
+                this.taskModalType = type;
+                this.showTaskModal = true;
+                const today = new Date().toISOString().split('T')[0];
+                this.taskForm = { id: '', title: '', manager: '', createTime: today, deadline: today, status: 'pending', desc: '' };
+                if (type === 'edit' || type === 'detail') this.taskForm = { ...task };
+            },
+            closeTaskModal() { this.showTaskModal = false; },
+
+            openRoleModal(type, role = {}) {
+                this.roleModalType = type;
+                this.showRoleModal = true;
+                this.roleForm = { id: '', name: '', desc: '', permissions: { user_manage: false, role_manage: false, task_manage: false, stats_view: false, report_export: false, system_setting: false } };
+                if (type === 'edit') this.roleForm = { ...role };
+            },
+            closeRoleModal() { this.showRoleModal = false; },
+            saveRole() { alert('角色管理功能开发中'); },
+            deleteRole(roleId) { alert('角色管理功能开发中'); },
+            updateRolePermission(role) { alert('角色管理功能开发中'); },
+
+            openPermissionModal(user) {
+                this.permissionUser = { ...user };
+                this.permissionForm = { ...(user.permissions || { user_manage: false, role_manage: false, task_manage: false, stats_view: false, report_export: false, system_setting: false }) };
+                this.showPermissionModal = true;
+            },
+            closePermissionModal() { this.showPermissionModal = false; },
+            saveUserPermission() { alert('权限设置功能开发中'); },
+
+            openNoticeModal(type, notice = {}) {
+                this.noticeModalType = type;
+                this.showNoticeModal = true;
+                const now = new Date();
+                this.noticeForm = { id: '', title: '', content: '', createTime: now.toISOString().slice(0, 16), author: this.currentUser.username };
+                if (type === 'edit') this.noticeForm = { ...notice, createTime: notice.createTime?.length === 10 ? notice.createTime + 'T00:00' : notice.createTime };
+            },
+            closeNoticeModal() { this.showNoticeModal = false; },
+            saveNotice() { alert('公告功能开发中'); },
+            deleteNotice(noticeId) { alert('公告功能开发中'); },
+
+           searchUserList() {
+            this.currentPage = 1;  // 搜索时重置到第一页
+            console.log('搜索用户：', this.searchUser);},
+            searchRoleList() { console.log('搜索角色'); },
+            searchTaskList() { console.log('搜索任务'); },
+            searchNoticeList() { console.log('搜索公告'); },
+
+            exportReport(format = 'excel') {
+                alert('报表导出功能需要后端支持');
+            },
+
+            saveSystemSettings() {
+                alert('系统设置保存成功');
+            },
+
+            resetSystemSettings() {
+                if (confirm('恢复默认设置？')) {
+                    this.systemSettings = { ...this.defaultSystemSettings };
+                    alert('已恢复默认');
+                }
+            },
+
+            formatDate(dateStr) {
+                if (!dateStr) return '';
+                const date = new Date(dateStr);
+                if (isNaN(date.getTime())) return dateStr;
+                return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')}`;
+            }
+        },
+        async mounted() {
+            this.setupAxios();
+            const today = new Date().toISOString().split('T')[0];
+            this.taskForm.createTime = today;
+            this.taskForm.deadline = today;
+            this.reportForm.startDate = today;
+            this.reportForm.endDate = today;
+            this.defaultSystemSettings = { ...this.systemSettings };
+
+            if (this.token) {
+                try {
+                    await this.fetchTasks();
+                    await this.fetchUsers();
+                    this.profileForm.username = this.currentUser.username;
+                    this.profileForm.phone = this.currentUser.phone || '';
+                } catch (err) {
+                    console.error('加载数据失败:', err);
+                    // 如果 token 无效，清除登录状态
+                    if (err.response?.status === 401) {
+                        this.handleLogout();
+                    }
+                }
+            }
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
